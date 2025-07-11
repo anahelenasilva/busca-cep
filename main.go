@@ -6,23 +6,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-)
 
-type Cep struct {
-	Cep         string `json:"cep"`
-	Logradouro  string `json:"logradouro"`
-	Complemento string `json:"complemento"`
-	Unidade     string `json:"unidade"`
-	Bairro      string `json:"bairro"`
-	Localidade  string `json:"localidade"`
-	Uf          string `json:"uf"`
-	Estado      string `json:"estado"`
-	Regiao      string `json:"regiao"`
-	Ibge        string `json:"ibge"`
-	Gia         string `json:"gia"`
-	Ddd         string `json:"ddd"`
-	Siafi       string `json:"siafi"`
-}
+	"github.com/anahelenasilva/busca-cep/entities"
+)
 
 func main() {
 	for _, url := range os.Args[1:] {
@@ -40,7 +26,7 @@ func main() {
 			break
 		}
 
-		var data Cep
+		var data entities.Cep
 		err = json.Unmarshal(response, &data)
 		if err != nil {
 			fmt.Println("Error unmarshalling JSON for URL:", url, "-", err.Error())
