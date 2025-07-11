@@ -1,16 +1,17 @@
 # Busca CEP
 
-A simple Go program to fetch and display Brazilian postal code (CEP) information from web APIs.
+A simple Go program to fetch Brazilian postal code (CEP) information from web APIs and save the results to a JSON file.
 
 ## Description
 
-This program accepts one or more URLs as command-line arguments, fetches data from each URL, and parses the response as CEP information. It's designed to work with Brazilian postal code APIs that return JSON data with address details.
+This program accepts one or more URLs as command-line arguments, fetches data from each URL, parses the response as CEP information, and saves all collected data to a `cep_data.json` file. It's designed to work with Brazilian postal code APIs that return JSON data with address details.
 
 ## Features
 
 - Fetch CEP data from multiple URLs in a single execution
 - Parse JSON responses containing Brazilian address information
-- Display structured CEP data including:
+- Save all CEP data to a structured JSON file (`cep_data.json`)
+- Process data for the following fields:
   - CEP (postal code)
   - Logradouro (street address)
   - Complemento (complement)
@@ -59,10 +60,52 @@ go run main.go "https://viacep.com.br/ws/01310-100/json/" "https://viacep.com.br
 
 #### Example Output
 
+After running the program, a `cep_data.json` file will be created with the following structure:
+
+```json
+[
+  {
+    "cep": "01310-100",
+    "logradouro": "Avenida Paulista",
+    "complemento": "",
+    "unidade": "",
+    "bairro": "Bela Vista",
+    "localidade": "São Paulo",
+    "uf": "SP",
+    "estado": "São Paulo",
+    "regiao": "Sudeste",
+    "ibge": "3550308",
+    "gia": "",
+    "ddd": "11",
+    "siafi": "1004"
+  },
+  {
+    "cep": "20040-020",
+    "logradouro": "Avenida Rio Branco",
+    "complemento": "de 1 ao 185 - lado ímpar",
+    "unidade": "",
+    "bairro": "Centro",
+    "localidade": "Rio de Janeiro",
+    "uf": "RJ",
+    "estado": "Rio de Janeiro",
+    "regiao": "Sudeste",
+    "ibge": "3304557",
+    "gia": "",
+    "ddd": "21",
+    "siafi": "6001"
+  }
+]
 ```
-CEP data: {01310-100 Avenida Paulista  {} Bela Vista São Paulo SP São Paulo Sudeste 3550308  11 1004}
-CEP data: {20040-020 Avenida Rio Branco de 1 ao 185 - lado ímpar {} Centro Rio de Janeiro RJ Rio de Janeiro Sudeste 3304557  21 6001}
-```
+
+## Output File
+
+The program creates a `cep_data.json` file in the same directory where the program is executed. This file contains:
+
+- An array of all successfully fetched CEP data
+- Pretty-formatted JSON with proper indentation
+- All CEP information organized in a structured format
+
+**Note**: If the file already exists, it will be overwritten with new data.
 
 ### Building the Program
 
@@ -113,8 +156,9 @@ The program handles the following error scenarios:
 - Network connection errors when fetching URLs
 - Invalid or malformed JSON responses
 - HTTP request failures
+- File creation and writing errors
 
-If an error occurs, the program will display an error message and stop processing further URLs.
+If an error occurs while fetching data from a URL, the program will display an error message and continue processing the remaining URLs. If there's an error creating or writing to the output file, the program will exit with an error code.
 
 ## Contributing
 
