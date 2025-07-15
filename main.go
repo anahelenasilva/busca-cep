@@ -5,57 +5,56 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/anahelenasilva/busca-cep/entities"
 )
 
 func main() {
+	http.HandleFunc("/busca-cep", BuscaCepHandler)
+	fmt.Println("Server running on port 8090")
+	http.ListenAndServe(":8090", nil)
+}
 
-	file, err := os.Create("cep_data.json")
+func BuscaCepHandler(writer http.ResponseWriter, request *http.Request) {
+	cepParam := request.URL.Query().Get("cep")
+	if cepParam == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		http.Error(writer, "CEP parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	cepResponse, err := BuscaCep(cepParam)
 	if err != nil {
-		fmt.Println("Error creating file:", err.Error())
-		os.Exit(1)
+		writer.WriteHeader(http.StatusInternalServerError)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	defer file.Close()
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	json.NewEncoder(writer).Encode(cepResponse)
+}
 
-	var cepsData []entities.Cep
+func BuscaCep(cep string) (*entities.Cep, error) {
+	url := fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep)
 
-	for _, url := range os.Args[1:] {
-		req, err := http.Get(url)
-		if err != nil {
-			fmt.Println("Error fetching URL:", url, "-", err.Error())
-			continue
-		}
+	resp, err := http.Get(url)
 
-		defer req.Body.Close()
-
-		response, err := io.ReadAll(req.Body)
-		if err != nil {
-			fmt.Println("Error reading response body for URL:", url, "-", err.Error())
-			continue
-		}
-
-		var cep entities.Cep
-		err = json.Unmarshal(response, &cep)
-		if err != nil {
-			fmt.Println("Error unmarshalling JSON for URL:", url, "-", err.Error())
-			continue
-		}
-
-		cepsData = append(cepsData, cep)
-	}
-
-	jsonData, err := json.MarshalIndent(cepsData, "", "  ")
 	if err != nil {
-		fmt.Println("Error marshalling JSON data:", err.Error())
-		os.Exit(1)
+		return nil, fmt.Errorf("error fetching CEP: %w", err)
 	}
 
-	_, err = file.Write(jsonData)
+	defer resp.Body.Close()
+	response, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error writing JSON data to file:", err.Error())
-		os.Exit(1)
+		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
+
+	var cepResponse entities.Cep
+	err = json.Unmarshal(response, &cepResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling JSON from provider: %w", err)
+	}
+
+	return &cepResponse, nil
 }
