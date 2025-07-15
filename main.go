@@ -10,9 +10,20 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/busca-cep", BuscaCepHandler)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", HomeHandler)
+	mux.HandleFunc("/busca-cep", BuscaCepHandler)
 	fmt.Println("Server running on port 8090")
-	http.ListenAndServe(":8090", nil)
+	http.ListenAndServe(":8090", mux)
+}
+
+func HomeHandler(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "text/plain")
+	writer.WriteHeader(http.StatusOK)
+
+	fmt.Fprintln(writer, "Welcome to the Busca CEP API!")
+	fmt.Fprintln(writer, "Use /busca-cep?cep=YOUR_CEP to get address information.")
 }
 
 func BuscaCepHandler(writer http.ResponseWriter, request *http.Request) {
