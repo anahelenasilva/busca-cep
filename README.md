@@ -1,17 +1,19 @@
 # Busca CEP
 
-A simple Go program to fetch Brazilian postal code (CEP) information from web APIs and save the results to a JSON file.
+A simple Go web server that provides a REST API to fetch Brazilian postal code (CEP) information.
 
 ## Description
 
-This program accepts one or more URLs as command-line arguments, fetches data from each URL, parses the response as CEP information, and saves all collected data to a `cep_data.json` file. It's designed to work with Brazilian postal code APIs that return JSON data with address details.
+This program runs as an HTTP server that exposes a REST API endpoint to fetch CEP (Brazilian postal code) information. The server integrates with the ViaCEP API to retrieve detailed address information and returns it as JSON responses to client requests.
 
 ## Features
 
-- Fetch CEP data from multiple URLs in a single execution
-- Parse JSON responses containing Brazilian address information
-- Save all CEP data to a structured JSON file (`cep_data.json`)
-- Process data for the following fields:
+- HTTP REST API server for CEP lookups
+- Integration with ViaCEP API for reliable data
+- JSON response format
+- Error handling with proper HTTP status codes
+- Simple query parameter-based requests
+- Returns comprehensive address information including:
   - CEP (postal code)
   - Logradouro (street address)
   - Complemento (complement)
@@ -37,75 +39,80 @@ This program accepts one or more URLs as command-line arguments, fetches data fr
    ```bash
    cd busca-cep
    ```
+3. Run the server:
+   ```bash
+   go run main.go
+   ```
+
+The server will start on port 8090 and display the message "Server running on port 8090".
 
 ## Usage
 
-### Basic Usage
+### Starting the Server
 
 ```bash
-go run main.go <URL1> <URL2> ... <URLn>
+go run main.go
 ```
+
+### API Endpoint
+
+The server exposes a single endpoint:
+
+**GET** `/busca-cep?cep={CEP_CODE}`
 
 ### Examples
 
-#### Using ViaCEP API (most common Brazilian CEP API)
+#### Fetch CEP information
 
 ```bash
-# Fetch information for a single CEP
-go run main.go "https://viacep.com.br/ws/01310-100/json/"
+# Using curl
+curl "http://localhost:8090/busca-cep?cep=01310-100"
 
-# Fetch information for multiple CEPs
-go run main.go "https://viacep.com.br/ws/01310-100/json/" "https://viacep.com.br/ws/20040-020/json/"
+# Using a web browser
+http://localhost:8090/busca-cep?cep=01310-100
 ```
 
-#### Example Output
+#### Multiple requests
 
-After running the program, a `cep_data.json` file will be created with the following structure:
+```bash
+# Fetch different CEPs
+curl "http://localhost:8090/busca-cep?cep=01310-100"
+curl "http://localhost:8090/busca-cep?cep=20040-020"
+curl "http://localhost:8090/busca-cep?cep=30112-000"
+```
 
+#### Example Response
+
+**Successful Request:**
 ```json
-[
-  {
-    "cep": "01310-100",
-    "logradouro": "Avenida Paulista",
-    "complemento": "",
-    "unidade": "",
-    "bairro": "Bela Vista",
-    "localidade": "São Paulo",
-    "uf": "SP",
-    "estado": "São Paulo",
-    "regiao": "Sudeste",
-    "ibge": "3550308",
-    "gia": "",
-    "ddd": "11",
-    "siafi": "1004"
-  },
-  {
-    "cep": "20040-020",
-    "logradouro": "Avenida Rio Branco",
-    "complemento": "de 1 ao 185 - lado ímpar",
-    "unidade": "",
-    "bairro": "Centro",
-    "localidade": "Rio de Janeiro",
-    "uf": "RJ",
-    "estado": "Rio de Janeiro",
-    "regiao": "Sudeste",
-    "ibge": "3304557",
-    "gia": "",
-    "ddd": "21",
-    "siafi": "6001"
-  }
-]
+{
+  "cep": "01310-100",
+  "logradouro": "Avenida Paulista",
+  "complemento": "",
+  "unidade": "",
+  "bairro": "Bela Vista",
+  "localidade": "São Paulo",
+  "uf": "SP",
+  "estado": "São Paulo",
+  "regiao": "Sudeste",
+  "ibge": "3550308",
+  "gia": "",
+  "ddd": "11",
+  "siafi": "1004"
+}
 ```
 
-## Output File
+**Error Response (Missing CEP parameter):**
+```
+HTTP 400 Bad Request
+CEP parameter is required
+```
 
-The program creates a `cep_data.json` file in the same directory where the program is executed. This file contains:
-
-- An array of all successfully fetched CEP data
-- Pretty-formatted JSON with proper indentation
-- All CEP information organized in a structured format
-
-**Note**: If the file already exists, it will be overwritten with new data.
+**Error Response (Invalid CEP or network error):**
+```
+HTTP 500 Internal Server Error
+Error message details
+```
 
 ### Building the Program
 
@@ -118,12 +125,24 @@ go build -o busca-cep main.go
 Then run the binary:
 
 ```bash
-./busca-cep "https://viacep.com.br/ws/01310-100/json/"
+./busca-cep
 ```
 
-## API Compatibility
+## API Reference
 
-This program is designed to work with APIs that return JSON data in the following format:
+### Endpoint
+
+**GET** `/busca-cep`
+
+### Parameters
+
+| Parameter | Type   | Required | Description                    |
+|-----------|--------|----------|--------------------------------|
+| `cep`     | string | Yes      | Brazilian postal code to search |
+
+### Response Format
+
+The API returns JSON data in the following format:
 
 ```json
 {
@@ -143,22 +162,28 @@ This program is designed to work with APIs that return JSON data in the followin
 }
 ```
 
-## Common CEP APIs
+### HTTP Status Codes
 
-- **ViaCEP**: `https://viacep.com.br/ws/{CEP}/json/`
-- **CEP Aberto**: `https://www.cepaberto.com/api/v3/cep?cep={CEP}` (requires API key)
-- **PostalMon**: `https://api.postmon.com.br/v1/cep/{CEP}`
+| Status Code | Description                    |
+|-------------|--------------------------------|
+| 200         | Success - CEP found            |
+| 400         | Bad Request - Missing CEP parameter |
+| 500         | Internal Server Error - API or network error |
+
+## Integration
+
+This server integrates with the **ViaCEP API** (`https://viacep.com.br/ws/{CEP}/json/`) to fetch reliable CEP information. ViaCEP is a free and widely-used Brazilian postal code API.
 
 ## Error Handling
 
-The program handles the following error scenarios:
+The server handles the following error scenarios:
 
-- Network connection errors when fetching URLs
-- Invalid or malformed JSON responses
-- HTTP request failures
-- File creation and writing errors
+- **Missing CEP parameter**: Returns HTTP 400 with error message
+- **Network connection errors**: Returns HTTP 500 with error details
+- **Invalid or malformed JSON responses**: Returns HTTP 500 with error details
+- **ViaCEP API failures**: Returns HTTP 500 with error details
 
-If an error occurs while fetching data from a URL, the program will display an error message and continue processing the remaining URLs. If there's an error creating or writing to the output file, the program will exit with an error code.
+All errors include descriptive messages to help with debugging.
 
 ## Contributing
 
